@@ -12,7 +12,8 @@ The repository includes the following Python scripts:
 - `evaluate_testset.py`: Evaluates the model on the test dataset.
 - `compare_submission.py`: Compares different submissions or model outputs.
 - `best_model.pth`: A demonstrative model trained from the demo_notebook.ipynb.
-- `demo_notebook.ipynb`: A demo notebook for defining the network, data augmentation, and training or testing. Visualizations are also included.
+- `demo_notebook.ipynb`: A demo notebook for defining the network, data augmentation, and training or testing. Visualizations are also included. The test loss/accuracy figure is included separately in draw_fig.py.
+- `draw_fig.py`: Plotting the testing accuracy and loss for the 900 epochs.
 ## Getting Started
 
 ## Acknowledgement
