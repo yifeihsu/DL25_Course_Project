@@ -8,6 +8,8 @@ from torch.amp import autocast, GradScaler
 import math
 import random
 import numpy as np
+from torchsummary import summary
+from torchviz import make_dot
 
 from model import ModifiedResNet
 
@@ -114,13 +116,13 @@ if __name__ == '__main__':
     test_dataset = torchvision.datasets.CIFAR10(
         root='./data', train=False, download=True, transform=transform_test)
 
-    batch_size = 256
+    batch_size = 1024
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=12, pin_memory=True
     )
     test_loader = torch.utils.data.DataLoader(
-        test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True
+        test_dataset, batch_size=batch_size, shuffle=False, num_workers=12, pin_memory=True
     )
 
     # 2) Model (limit ~5M params)
@@ -131,9 +133,9 @@ if __name__ == '__main__':
         use_se=True
     ).cuda()
 
-    # model = torch.compile(model, backend="aot_eager")
+    summary(model, input_size=(3, 32, 32))  # CIFAR-10 input size
+    model = torch.compile(model)
 
-    # 3) Loss (consider reducing label smoothing if using MixUp/CutMix)
     criterion = nn.CrossEntropyLoss(label_smoothing=0.0)
 
     # 4) Optimizer & LR scheduler
@@ -148,7 +150,7 @@ if __name__ == '__main__':
     def lr_lambda(epoch):
         # warm-up for 10 epochs, then cosine
         warmup_epochs = 10
-        total_epochs = 550
+        total_epochs = 750
         if epoch < warmup_epochs:
             return float(epoch + 1) / warmup_epochs
         else:
@@ -165,8 +167,11 @@ if __name__ == '__main__':
     cutmix_alpha = 1.0
     # Probability to apply any mixing
     mix_prob = 1.0  # e.g., 1.0 => always do either MixUp or CutMix, 0.5 => half the time
-
-    num_epochs = 550
+    train_loss_history = []
+    train_acc_history = []
+    test_loss_history = []
+    test_acc_history = []
+    num_epochs = 750
     best_acc = 0.0
 
     for epoch in range(num_epochs):
