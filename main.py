@@ -9,7 +9,6 @@ import math
 import random
 import numpy as np
 from torchsummary import summary
-from torchviz import make_dot
 
 from model import ModifiedResNet
 
