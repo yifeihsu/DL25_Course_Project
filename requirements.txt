@@ -1,0 +1,6 @@
+numpy==2.2.4
+pandas==2.2.3
+torch==2.6.0+cu126
+torchsummary==1.5.1
+torchvision==0.21.0+cu126
+torchviz==0.0.3

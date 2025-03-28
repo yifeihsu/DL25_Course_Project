@@ -3,25 +3,12 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-
+from collections import OrderedDict
 from model import ModifiedResNet
 import pickle
 import pandas as pd
 import numpy as np
 
-model = ModifiedResNet(
-    num_blocks=[4,4,3],
-    base_channels=64,
-    num_classes=10,
-    use_se=True
-)
-
-checkpoint_path = 'best_model.pth'
-model.load_state_dict(torch.load(checkpoint_path, map_location='cuda'))
-model.eval()
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model.to(device)
 
 class CIFAR10TestDataset(Dataset):
     def __init__(self, data, transform=None):
@@ -51,7 +38,20 @@ def main():
     # 2) Load the model & weights
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = ModifiedResNet(num_blocks=[4,4,3], base_channels=64, num_classes=10, use_se=True).to(device)
-    model.load_state_dict(torch.load('best_model_c.pth', map_location=device))
+    checkpoint = torch.load('best_model.pth', map_location='cuda')
+
+    # Create a new OrderedDict where we rename each key
+    new_state_dict = OrderedDict()
+    for k, v in checkpoint.items():
+        # Remove the "_orig_mod." prefix
+        if k.startswith("_orig_mod."):
+            new_k = k.replace("_orig_mod.", "")
+        else:
+            new_k = k
+        new_state_dict[new_k] = v
+
+    # Now load the renamed state dict
+    model.load_state_dict(new_state_dict)
     model.eval()
 
     # 3) Load test data
@@ -84,7 +84,7 @@ def main():
         "ID": range(len(all_preds)),
         "Labels": all_preds
     })
-    df.to_csv("submission_c.csv", index=False)
+    df.to_csv("submission.csv", index=False)
     print("Saved predictions to submission.csv")
 
 if __name__ == '__main__':

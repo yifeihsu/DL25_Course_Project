@@ -109,13 +109,13 @@ if __name__ == '__main__':
     test_dataset = torchvision.datasets.CIFAR10(
         root='./data', train=False, download=True, transform=transform_test)
 
-    batch_size = 256
+    batch_size = 1024
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=12, pin_memory=True
     )
     test_loader = torch.utils.data.DataLoader(
-        test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True
+        test_dataset, batch_size=batch_size, shuffle=False, num_workers=12, pin_memory=True
     )
 
     # 2) Model
@@ -125,7 +125,7 @@ if __name__ == '__main__':
         num_classes=10,
         use_se=True
     ).cuda()
-
+    model = torch.compile(model)
     # 3) Loss
     criterion = nn.CrossEntropyLoss(label_smoothing=0.0)
 
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     def lr_lambda(epoch):
         # warm-up for 10 epochs, then cosine
         warmup_epochs = 10
-        total_epochs = 550  # original total
+        total_epochs = 1250  # original total
         if epoch < warmup_epochs:
             return float(epoch + 1) / warmup_epochs
         else:
@@ -152,14 +152,14 @@ if __name__ == '__main__':
     scaler = GradScaler(device='cuda')
 
     # ======================================
-    #  Load from checkpoint at 550th epoch
+    #  Load from checkpoint at 750th epoch
     # ======================================
     checkpoint = torch.load('checkpoint.pth')   # Your saved checkpoint at epoch=550
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
     scaler.load_state_dict(checkpoint['scaler_state_dict'])
-    start_epoch = checkpoint['epoch'] + 1  # e.g. 550 + 1 = 551
+    start_epoch = checkpoint['epoch'] + 1
     best_acc = checkpoint['best_acc']
 
     print(f"Resuming training from epoch {start_epoch}, best accuracy so far: {best_acc:.2f}%")
@@ -169,8 +169,7 @@ if __name__ == '__main__':
     cutmix_alpha = 1.0
     mix_prob = 1.0
 
-    # We want to train 200 more epochs beyond 550
-    additional_epochs = 200
+    additional_epochs = 500
     end_epoch = start_epoch + additional_epochs  # e.g., 551 -> 750
 
     for epoch in range(start_epoch, end_epoch):
